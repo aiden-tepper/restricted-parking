@@ -1,0 +1,4 @@
+googlemaps
+foursquare
+requests
+beautifulsoup
