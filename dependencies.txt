@@ -1,4 +1,4 @@
 googlemaps
 foursquare
 requests
-beautifulsoup
+beautifulsoup4

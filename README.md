@@ -1,4 +1,4 @@
 # Install Dependencies
 ``` bash
-pip install -r dependencies.txt
+pip3 install -U -r dependencies.txt
 ```
