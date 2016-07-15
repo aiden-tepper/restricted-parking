@@ -28,8 +28,7 @@ class Importer():
   }
   
   importers = [
-    Google()
-    #Yelp(), Google(), Foursquare()
+    Yelp(), Google(), Foursquare()
   ]
   
   # Import Method

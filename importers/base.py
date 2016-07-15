@@ -24,6 +24,7 @@ class Venue(object):
   phone = None
   yelp_id = None
   google_id = None
+  foursquare_id = None
   
   
   def __init__(self, **kwargs):
