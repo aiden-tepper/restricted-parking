@@ -23,6 +23,7 @@ class Venue(object):
   city = None
   phone = None
   yelp_id = None
+  google_id = None
   
   
   def __init__(self, **kwargs):

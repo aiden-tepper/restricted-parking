@@ -5,7 +5,7 @@ from bs4 import BeautifulSoup
 class Yelp(Base):
 
   base_url = "https://www.yelp.com/search?"
-  debug = True
+  debug = False
   
   def request(self, parameters):
     if self.debug:
@@ -50,7 +50,7 @@ class Yelp(Base):
         venue.lat = locations[0]["geometry"]["location"]["lat"]
         venue.lng = locations[0]["geometry"]["location"]["lng"]
       
-      print("Venue Found: " + venue.name)
+      print("YELP: " + venue.name)
       venues.append(venue)
       
       
@@ -64,7 +64,7 @@ class Yelp(Base):
     return current.findNext('div', class_ = "page-option") 
       
         
-  def fetch_data(self, lat, lng, start=0, venues=[]):  
+  def fetch_data(self, lat, lng, start = 0, venues = []):  
     addresses = self.gmaps.reverse_geocode((lat, lng))
     
     if len(addresses) == 0:
