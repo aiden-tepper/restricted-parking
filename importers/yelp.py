@@ -5,7 +5,7 @@ from bs4 import BeautifulSoup
 class Yelp(Base):
 
   base_url = "https://www.yelp.com/search?"
-  debug = False
+  debug = True
   
   def request(self, parameters):
     if self.debug:
@@ -20,20 +20,30 @@ class Yelp(Base):
     for result in soup.find_all("li", class_ = "regular-search-result"):
       a_node = result.find("a", class_ = "biz-name")
       address_node = result.find("address")
+      city_node = result.find("span", class_ = "neighborhood-str-list")
+      phone_node = result.find("span", class_ = "biz-phone")
       address = None
+      city = None
+      phone = None
       locations = []
       
       if address_node is not None:
         address = address_node.getText("").strip()
         locations = self.gmaps.geocode(address)
       
+      if city_node is not None:
+        city = city_node.getText().strip()
+      
+      if phone_node is not None:
+        phone = phone_node.getText().strip()
+      
       venue = Venue(
         source = "yelp",
         name = a_node.getText(),
         yelp_id = a_node["href"].replace("/biz/", ""),
         address = address,
-        city = result.find("span", class_ = "neighborhood-str-list").getText().strip(),
-        phone = result.find("span", class_ = "biz-phone").getText().strip()
+        city = city,
+        phone = phone
       )
       
       if len(locations) > 0:      

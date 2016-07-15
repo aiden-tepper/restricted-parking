@@ -11,7 +11,7 @@ from importers.foursquare import Foursquare
 class Importer():
   
   # Instance Variables
-  search_area = 0.01
+  search_area = 2 #0.01
   search_areas = {
     "Santa Monica": [
       33.984862, -118.514328,

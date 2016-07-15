@@ -6,7 +6,7 @@ class Base(object):
   
   debug = False
   gmaps = gmaps.Client(key='AIzaSyCQdXjYOfGZq37rCE0pD55Mmi0I-m7q0Ss')
-    
+  
   
   def fetch_data(self, lat, lng):
     raise NotImplementedError('Must override this method in your derived Class')
@@ -29,6 +29,7 @@ class Venue(object):
     for key, value in list(kwargs.items()):
       setattr(self, key, value)
 
+  
   def __setattr__(self, key, value):
     """
     We want to prevent importers from adding invalid attributes (PWS-317)
