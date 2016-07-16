@@ -5,10 +5,11 @@ class Base(object):
   """Override this in your derived class."""
   
   debug = False
+  venues = {}
   gmaps = gmaps.Client(key='AIzaSyCQdXjYOfGZq37rCE0pD55Mmi0I-m7q0Ss')
   
   
-  def fetch_data(self, lat, lng):
+  def fetch(self, lat, lng):
     raise NotImplementedError('Must override this method in your derived Class')
   
   

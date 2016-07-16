@@ -26,7 +26,7 @@ class Google(Base):
     return places
   
   
-  def fetch_data(self, lat, lng, next = None, venues = []): 
+  def fetch(self, lat, lng, next = None): 
     results = self.filter(self.request({
       "location": [lat, lng],
       "radius": 5000,
@@ -44,11 +44,10 @@ class Google(Base):
         lng = place["geometry"]["location"]["lng"]
       )
       
-      print("GOOGLE: " + venue.name)
-      venues.append(venue)
+      if venue.google_id not in self.venues:
+        print("GOOGLE: " + venue.name)
+        self.venues[venue.google_id] = venue
     
     if "next_page_token" in results:	
       time.sleep(2)
-      self.fetch_data(lat, lng, results["next_page_token"], venues)
-      
-    return venues
+      self.fetch(lat, lng, results["next_page_token"])

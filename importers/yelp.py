@@ -16,21 +16,15 @@ class Yelp(Base):
     return BeautifulSoup(r.text, 'html.parser')
 
   
-  def extract_venues(self, soup, venues):
+  def extract_venues(self, soup):
     for result in soup.find_all("li", class_ = "regular-search-result"):
       a_node = result.find("a", class_ = "biz-name")
       address_node = result.find("address")
       city_node = result.find("span", class_ = "neighborhood-str-list")
       phone_node = result.find("span", class_ = "biz-phone")
-      address = None
       city = None
       phone = None
-      locations = []
-      
-      if address_node is not None:
-        address = address_node.getText("").strip()
-        locations = self.gmaps.geocode(address)
-      
+    
       if city_node is not None:
         city = city_node.getText().strip()
       
@@ -41,17 +35,19 @@ class Yelp(Base):
         source = "yelp",
         name = a_node.getText(),
         yelp_id = a_node["href"].replace("/biz/", ""),
-        address = address,
         city = city,
         phone = phone
       )
       
-      if len(locations) > 0:      
-        venue.lat = locations[0]["geometry"]["location"]["lat"]
-        venue.lng = locations[0]["geometry"]["location"]["lng"]
-      
-      print("YELP: " + venue.name)
-      venues.append(venue)
+      if venue.yelp_id not in self.venues:      
+        if address_node is not None:
+          venue.address = address_node.getText("").strip()
+          locations = self.gmaps.geocode(venue.address)      
+          venue.lat = locations[0]["geometry"]["location"]["lat"]
+          venue.lng = locations[0]["geometry"]["location"]["lng"]
+        
+        print("YELP: " + venue.name)
+        self.venues[venue.yelp_id] = venue
       
       
   def next_page(self, soup):
@@ -61,13 +57,13 @@ class Yelp(Base):
       ]
     })
     
-    if current is None
+    if current is None:
       return None
     
     return current.findNext('div', class_ = "page-option") 
       
         
-  def fetch_data(self, lat, lng, venues = []):  
+  def fetch(self, lat, lng, offset = 0):  
     addresses = self.gmaps.reverse_geocode((lat, lng))
     
     if len(addresses) == 0:
@@ -75,14 +71,13 @@ class Yelp(Base):
     
     soup = self.request({
       "find_loc": addresses[0]["formatted_address"],
-      "start": len(venues),
+      "start": offset,
       "attrs": "BusinessParking.lot"
     })
     
-    self.extract_venues(soup, venues)
+    self.extract_venues(soup)
     
     if self.next_page(soup) is not None:
-      return self.fetch_data(lat, lng, venues)
+      offset += 10
+      return self.fetch(lat, lng, offset)
     
-    return venues
-      

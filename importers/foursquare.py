@@ -18,21 +18,19 @@ class Foursquare(Base):
     return self.client.venues.explore(params=params)
 
     
-  def fetch_data(self, lat, lng, venues = []):     
+  def fetch(self, lat, lng, offset = 0):     
     results = self.request({
       "ll": "%.8f,%.8f" % (lat, lng),
       "radius": 5000,
       "limit": 50,
-      "offset": len(venues),
+      "offset": offset,
       "query": "free parking"
     })
-    
-    if not results["groups"][0]["items"]:
-      return venues
     
     for group in results["groups"]:
       for item in group["items"]:
         place = item["venue"]
+        offset += 1
         
         venue = Venue(
           source = "foursquare",
@@ -45,7 +43,9 @@ class Foursquare(Base):
           phone = place["contact"].get("formattedPhone")
         )
         
-        print("FOURSQUARE: " + venue.name)
-        venues.append(venue)
-      
-    return self.fetch_data(lat, lng, venues)
+        if venue.foursquare_id not in self.venues:
+          print("FOURSQUARE: " + venue.name)
+          self.venues[venue.foursquare_id] = venue
+     
+    if results["groups"][0]["items"]: 
+      return self.fetch(lat, lng, offset)
