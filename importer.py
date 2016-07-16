@@ -18,14 +18,6 @@ class Importer():
       [33.984862, -118.514328],
       [34.05056, -118.39777]
     ]
-#     "United States": [
-#       -125.0011, 24.9493, 
-#       -66.9326, 49.5904
-#     ]
-#     "Santa Monica": [
-#       34.0170211, -118.49357419999998,
-#       34.0170411, -118.49359419999998,
-#     ]
   }
   
   importers = [
@@ -37,7 +29,7 @@ class Importer():
     for name, box in self.search_boxes.items():     
       for location in self.locations(box):
         self.fetch(location[0], location[1])
-      
+
   
   def fetch(self, lat, lng):    
     for importer in self.importers:
@@ -70,4 +62,5 @@ class Importer():
     
     
 if __name__ == "__main__":
-  Importer().run()
+  importer = Importer()
+  importer.run()
