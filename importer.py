@@ -35,7 +35,6 @@ class Importer():
   
   def fetch(self, lat, lng):    
     for importer in self.importers:
-      importer.upload(lat, lng)
       importer.fetch(lat, lng)
       importer.upload(lat, lng)
          

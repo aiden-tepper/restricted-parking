@@ -16,14 +16,12 @@ class Base:
     raise NotImplementedError('Must override this method in your derived Class')
     
     
-  def upload(self, lat, lng):
-    destinations = self.parkme.destinations(lat, lng)
-    
+  def upload(self, lat, lng):    
     for venue in self.to_save:
       self.parkme.add_lot(venue)
     
     self.to_save = []
-  
+    
 
 class Venue(object):
   
@@ -37,7 +35,7 @@ class Venue(object):
   yelp_id = None
   google_id = None
   foursquare_id = None
-  
+  destination = None
   
   def __init__(self, **kwargs):
     for key, value in list(kwargs.items()):
