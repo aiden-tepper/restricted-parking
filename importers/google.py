@@ -46,8 +46,10 @@ class Google(Base):
       
       if venue.google_id not in self.venues:
         print("GOOGLE: " + venue.name)
+        self.to_save.append(venue)
         self.venues[venue.google_id] = venue
     
     if "next_page_token" in results:	
+      self.upload(lat, lng)
       time.sleep(2)
       self.fetch(lat, lng, results["next_page_token"])

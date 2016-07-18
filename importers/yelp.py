@@ -47,6 +47,7 @@ class Yelp(Base):
           venue.lng = locations[0]["geometry"]["location"]["lng"]
         
         print("YELP: " + venue.name)
+        self.to_save.append(venue)
         self.venues[venue.yelp_id] = venue
       
       
@@ -79,5 +80,6 @@ class Yelp(Base):
     
     if self.next_page(soup) is not None:
       offset += 10
+      self.upload(lat, lng)
       return self.fetch(lat, lng, offset)
     

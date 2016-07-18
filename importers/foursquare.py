@@ -45,7 +45,9 @@ class Foursquare(Base):
         
         if venue.foursquare_id not in self.venues:
           print("FOURSQUARE: " + venue.name)
+          self.to_save.append(venue)
           self.venues[venue.foursquare_id] = venue
      
     if results["groups"][0]["items"]: 
+      self.upload(lat, lng)
       return self.fetch(lat, lng, offset)

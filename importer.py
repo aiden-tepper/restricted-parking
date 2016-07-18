@@ -20,12 +20,14 @@ class Importer():
     ]
   }
   
+  venues = []
   importers = [
     Yelp(), Google(), Foursquare()
   ]
   
   # Import Method
   def run(self):
+    # Fetch venues for point
     for name, box in self.search_boxes.items():     
       for location in self.locations(box):
         self.fetch(location[0], location[1])
@@ -33,8 +35,10 @@ class Importer():
   
   def fetch(self, lat, lng):    
     for importer in self.importers:
+      importer.upload(lat, lng)
       importer.fetch(lat, lng)
-      
+      importer.upload(lat, lng)
+         
   
   def locations(self, box):
     locations = []
