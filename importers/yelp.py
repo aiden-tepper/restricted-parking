@@ -7,6 +7,11 @@ class Yelp(Base):
   base_url = "https://www.yelp.com/search?"
   debug = False
   
+  def __init__(self):
+    requests.adapters.DEFAULT_POOL_TIMEOUT = 1000
+    requests.adapters.DEFAULT_RETRIES = 3
+  
+  
   def request(self, parameters):
     if self.debug:
       f = open('samples/yelp.html', 'r')

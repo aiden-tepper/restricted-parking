@@ -32,7 +32,7 @@ class ParkMe:
     
     destinations = response.json()["Destinations"]
     
-    if len(destinations) > 0:
+    if len(destinations) > 0 and destinations[0]["distance"] < 100:
       return destinations[0]["slug"]
     
     return None
