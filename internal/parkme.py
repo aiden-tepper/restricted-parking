@@ -1,8 +1,8 @@
-import requests
+import requests, sys
 
 class ParkMe:
   
-  base_url = "http://api.dev01.parkme.com"
+  base_url = sys.argv[1]
   lot_url = base_url + "/lot"
   destination_url = base_url + "/destination"
   user = '7e7e5a90-5534-11e2-82e7-22000af90521' # jenkins user
@@ -13,17 +13,20 @@ class ParkMe:
       "lng": venue.lng,
       "address": venue.address,
       "user": self.user,
-      "destination": self.destination(venue),
-      "is_destination": True
+      "destination": self.get_destination(venue),
+      "restrictive": True
     })
     
     if "Created" in response.text:
       print("PARKME UPLOAD:", venue.name, "---", venue.address)
     
     
-  def destination(self, venue):
+  def get_destination(self, venue):
+    if venue.lat is None or venue.lng is None:
+      return None
+        
     response = requests.get(self.destination_url, params={
-      "pt": "%f|%f|%i" % (venue.lng, venue.lat, 500),
+      "pt": "%f|%f|%i" % (venue.lng, venue.lat, 50),
       "name": venue.name,
       "user": self.user,
       "pub_id": "1",
@@ -32,7 +35,7 @@ class ParkMe:
     
     destinations = response.json()["Destinations"]
     
-    if len(destinations) > 0 and destinations[0]["distance"] < 100:
+    if len(destinations) > 0 and destinations[0]["distance"] < 50:
       return destinations[0]["slug"]
     
     return None

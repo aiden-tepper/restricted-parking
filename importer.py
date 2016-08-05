@@ -2,7 +2,7 @@
 # pylint: disable=unused-import,fixme,abstract-class-not-used
 
 from scipy import arange
-import math
+import math, sys
 
 from importers.yelp import Yelp
 from importers.google import Google
@@ -65,5 +65,9 @@ class Importer():
     
     
 if __name__ == "__main__":
+  if len(sys.argv) <= 1:
+    print("Please provide a ParkMe API! Ex: http://api.parkme.com")
+    sys.exit(1)
+
   importer = Importer()
   importer.run()
