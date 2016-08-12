@@ -1,0 +1,9 @@
+- Find block polygon
+- Pull new terrain image 
+- Find block polygon on new image that is zoomed in
+- Mask out everything outside of polygon
+- Edge detection
+- Box around on edges
+- Color histogram on edge detection
+- Build color profiles on shapes
+- Classify lot based off of color profiles
