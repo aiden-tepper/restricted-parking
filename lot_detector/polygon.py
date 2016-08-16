@@ -170,7 +170,7 @@ class PolygonDetector:
   
   def image_find_start(self, image):  
     colors = [
-      [x, image[x]] for x in np.ndindex(image.shape[:2])
+      [x, image[x]] for x in np.ndindex(image.shape[:2]) if len(set(image[x])) > 1
     ]
     sorted_colors = self.sort_nearest(colors, self.dot_color_rgb)     
     return sorted_colors[0][0]
