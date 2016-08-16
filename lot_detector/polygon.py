@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from scipy import spatial
 from queue import Queue
 import skimage.io as io
 import math
@@ -10,7 +11,10 @@ class PolygonDetector:
   
   zoom = 17
   tile_size = 500
-  terrain_base_url = "https://maps.googleapis.com/maps/api/staticmap?maptype=terrain&style=feature:administrative|element:all|visibility:off&style=feature:road|element:all|color:0x000000&style=feature:landscape|element:all|color:0xFFFFFF&style=feature:poi|element:all|visibility:off&style=feature:transit|element:labels|visibility:off&style=feature:road|element:labels|visibility:off&key=AIzaSyA4rAT0fdTZLNkJ5o0uaAwZ89vVPQpr_Kc&"
+  grayscale_filter = 100
+  dot_color = "0x73FF2F"
+  dot_color_rgb = [155, 255, 47]
+  terrain_base_url = "https://maps.googleapis.com/maps/api/staticmap?style=feature:poi|visibility:simplified&style=feature:administrative|element:all|visibility:off&style=feature:road|element:all|color:0x000000&style=feature:landscape|element:all|color:0xFFFFFF&style=feature:poi|element:all|visibility:off&style=feature:transit|element:labels|visibility:off&style=feature:road|element:labels|visibility:off&key=AIzaSyA4rAT0fdTZLNkJ5o0uaAwZ89vVPQpr_Kc&"
   satellite_base_url = "https://maps.googleapis.com/maps/api/staticmap?maptype=satellite&key=AIzaSyA4rAT0fdTZLNkJ5o0uaAwZ89vVPQpr_Kc&"
   mercator = GlobalMercator(tileSize=tile_size)
   
@@ -28,37 +32,44 @@ class PolygonDetector:
     return "%ix%i" % (tile,tile)
     
   
-  def fetch_image(self, maptype, params):
+  def fetch_image(self, maptype, params, marker=None):
     url = self.terrain_base_url
     
     if maptype == "satellite":
       url = self.satellite_base_url
     
+    if marker:
+      params +="&markers=color:%s|size:tiny|%s" % (
+        self.dot_color,
+        self.point_to_string(marker)
+        
+      )
+    
     print(url + params)
     return io.imread(url + params)
   
   
-  def center_image(self, maptype, point, zoom):
+  def center_image(self, maptype, point, zoom, marker=None):
     params = "center=%s&size=%s&zoom=%i" % (
       self.point_to_string(point),
       self.tile_to_string(self.tile_size),
       zoom
     )
     
-    return self.fetch_image(maptype, params)
+    return self.fetch_image(maptype, params, marker=marker)
     
     
-  def bounds_image(self, maptype, bounds, zoom):
+  def bounds_image(self, maptype, bounds, zoom, marker=None):
     params = "visible=%s&size=%s&zoom=%i" % (
       self.bounds_to_string(bounds),
       self.tile_to_string(self.tile_size),
       zoom
     )
     
-    return self.fetch_image(maptype, params)
+    return self.fetch_image(maptype, params, marker=marker)
   
     
-  # Help Methods
+  # Helper Methods
   def grayscale(self, rgb):
     if len(rgb.shape) < 3:
       return rgb
@@ -67,27 +78,38 @@ class PolygonDetector:
     gray = 0.2989 * r + 0.5870 * g + 0.1140 * b
     return gray
     
-  
-  def in_shape(self, shape, point):
+    
+  def neighbors(self, shape, point):
     bounds = [-1, shape[0], shape[1]]
-    return point[0] not in bounds and point[1] not in bounds
-    
-    
-  def neighbors(self, point):
-    return [
+    neighbors = [
       (point[0] + 1, point[1]),
+      (point[0] - 1, point[1]),
       (point[0], point[1] + 1),
-      (point[0] - 1, point[0]),
       (point[0], point[1] - 1)
+    ]
+    
+    def in_shape(test_point):
+      return test_point[0] not in bounds and test_point[1] not in bounds
+    
+    return [ x for x in neighbors if in_shape(x) ]
+    
+    
+  def sort_nearest(self, points, point):
+    distances = np.array([ 
+      [x, np.linalg.norm(x[1]-point)] for x  in points 
+    ])
+    
+    return [
+      x[0] for x in distances[distances[:,1].argsort()]
     ]
     
   
   def mask_image(self, image, polygon):
     temp = image.copy()
-    image[:] = 0
+    image[:] = 255
     
-    for cords in polygon:
-      image[cords] = temp[cords]
+    for point in polygon:
+      image[point] = temp[point]
     
     return image
     
@@ -99,8 +121,8 @@ class PolygonDetector:
   # Mercator Helper Methods
   def point_to_pixels(self, point, zoom):
     meters = self.mercator.LatLonToMeters(point[0], point[1])
-    return self.mercator.MetersToPixels(meters[0], meters[1], zoom)
-  
+    return self.mercator.MetersToPixels(meters[0], meters[1], zoom)  
+
   
   def pixels_to_point(self, pixels, zoom):
     meters = self.mercator.PixelsToMeters(pixels[0], pixels[1], zoom)
@@ -132,42 +154,64 @@ class PolygonDetector:
     
     
   def search_terrain(self, point):
-    center_image = self.center_image("terrain", point, self.zoom)
-    (center_polygon, center_bounds) = self.image_search(center_image)
+    center_image = self.center_image("terrain", point, self.zoom, marker=point)
+    (center_polygon, center_bounds) = self.image_search(center_image, point, self.zoom)
     
+    self.save_image("centered", center_image)
     self.save_image("test", self.mask_image(center_image, center_polygon))
     
     zoomed_bounds = self.pixel_bounds_to_point_bounds(point, center_bounds, self.zoom)
-    zoomed_image = self.bounds_image("terrain", zoomed_bounds, self.zoom + 1)
-    #(zoomed_polygon, zoomed_bounds) = self.image_search(zoomed_image)
+    zoomed_image = self.bounds_image("terrain", zoomed_bounds, self.zoom + 1, marker=point)
+    (zoomed_polygon, zoomed_bounds) = self.image_search(zoomed_image, point, self.zoom + 1)
     
-    print(zoomed_image.shape)
     self.save_image("zoomed", zoomed_image)
-    #self.save_image("zoomed", self.mask_image(zoomed_image, zoomed_polygon))
+    self.save_image("test2", self.mask_image(zoomed_image, zoomed_polygon))
+    
   
-  
-  def image_search(self, image):
-    grayscale = self.grayscale(image)
-    start = tuple(int(x/2) for x in grayscale.shape)
+  def image_find_start(self, image):  
+    colors = [
+      [x, image[x]] for x in np.ndindex(image.shape[:2])
+    ]
+    sorted_colors = self.sort_nearest(colors, self.dot_color_rgb)     
+    return sorted_colors[0][0]
+    
+    
+  def image_find_border(self, image, point):
+    array = np.array(np.where(image < self.grayscale_filter)).T
+    return tuple(array[spatial.KDTree(array).query(point)[1]])
+    
+    
+  def image_trace_border(self, image, start):
     frontier = Queue()
     frontier.put(start)
-    mask = np.where(grayscale > 30)
-    potentials = { tuple(x): True for x in np.array(mask).T }
     polygon = []
     visited = []
-        
+    
     while not frontier.empty():        
-      current = frontier.get()
+      point = frontier.get()
+      neighbors = self.neighbors(image.shape, point)
+      non_borders = [
+        x for x in neighbors if image[x] > self.grayscale_filter
+      ]
       
-      for point in self.neighbors(current):
-        if point in visited or not self.in_shape(grayscale.shape, point):
-          continue
-      
-        visited.append(point)
-      
-        if point in potentials:
-          frontier.put(point)
-          polygon.append(point)
+      if len(non_borders) == 0 or len(neighbors) == len(non_borders):
+        continue
+        
+      polygon.append(point)
+        
+      for neighbor in neighbors:
+        if neighbor not in visited:          
+          visited.append(neighbor)
+          frontier.put(neighbor)
+          
+    return polygon
+
+
+  def image_search(self, image, point, zoom):   
+    grayscale = self.grayscale(image)
+    start = self.image_find_start(image)
+    border_point = self.image_find_border(grayscale, start)
+    polygon = self.image_trace_border(grayscale, border_point)
     
     xs = [int(i[0]) for i in polygon]
     ys = [int(i[1]) for i in polygon]
