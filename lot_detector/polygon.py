@@ -5,17 +5,20 @@ from queue import Queue
 import skimage.io as io
 import math
 from mercator import GlobalMercator
+from PIL import Image, ImageDraw
+from skimage import feature
+import skimage.filters as filters
+
 
 
 class PolygonDetector:
   
-  zoom = 17
+  zoom = 20
   tile_size = 500
   grayscale_filter = 100
   dot_color = "0x73FF2F"
   dot_color_rgb = [155, 255, 47]
-  terrain_base_url = "https://maps.googleapis.com/maps/api/staticmap?style=feature:poi|visibility:simplified&style=feature:administrative|element:all|visibility:off&style=feature:road|element:all|color:0x000000&style=feature:landscape|element:all|color:0xFFFFFF&style=feature:poi|element:all|visibility:off&style=feature:transit|element:labels|visibility:off&style=feature:road|element:labels|visibility:off&key=AIzaSyA4rAT0fdTZLNkJ5o0uaAwZ89vVPQpr_Kc&"
-  satellite_base_url = "https://maps.googleapis.com/maps/api/staticmap?maptype=satellite&key=AIzaSyA4rAT0fdTZLNkJ5o0uaAwZ89vVPQpr_Kc&"
+  base_url = "https://maps.googleapis.com/maps/api/staticmap?style=feature:poi|visibility:simplified&style=feature:administrative|element:all|visibility:off&style=feature:road|element:all|color:0x000000&style=feature:landscape|element:all|color:0xFFFFFF&style=feature:poi|element:all|visibility:off&style=feature:transit|element:labels|visibility:off&style=feature:road|element:labels|visibility:off&key=AIzaSyA4rAT0fdTZLNkJ5o0uaAwZ89vVPQpr_Kc&"
   mercator = GlobalMercator(tileSize=tile_size)
   
     
@@ -32,21 +35,19 @@ class PolygonDetector:
     return "%ix%i" % (tile,tile)
     
   
-  def fetch_image(self, maptype, params, marker=None):
-    url = self.terrain_base_url
-    
+  def fetch_image(self, maptype, params, marker=None):    
     if maptype == "satellite":
-      url = self.satellite_base_url
+      params += "&maptype=satellite"
     
     if marker:
-      params +="&markers=color:%s|size:tiny|%s" % (
+      params += "&markers=color:%s|size:tiny|%s" % (
         self.dot_color,
         self.point_to_string(marker)
         
       )
     
-    print(url + params)
-    return io.imread(url + params)
+    print(self.base_url + params)
+    return io.imread(self.base_url + params)
   
   
   def center_image(self, maptype, point, zoom, marker=None):
@@ -78,6 +79,10 @@ class PolygonDetector:
     gray = 0.2989 * r + 0.5870 * g + 0.1140 * b
     return gray
     
+  
+  def in_shape(self, bounds, point):
+    return point[0] not in bounds and point[1] not in bounds
+    
     
   def neighbors(self, shape, point):
     bounds = [-1, shape[0], shape[1]]
@@ -88,10 +93,7 @@ class PolygonDetector:
       (point[0], point[1] - 1)
     ]
     
-    def in_shape(test_point):
-      return test_point[0] not in bounds and test_point[1] not in bounds
-    
-    return [ x for x in neighbors if in_shape(x) ]
+    return [ x for x in neighbors if self.in_shape(bounds, x) ]
     
     
   def sort_nearest(self, points, point):
@@ -104,18 +106,23 @@ class PolygonDetector:
     ]
     
   
-  def mask_image(self, image, polygon):
+  def mask_image(self, image, polygon):  
+    # Flip coordinates for the mask
+    for i, point in enumerate(polygon):
+      polygon[i] = (point[1], point[0])
+    
+    img = Image.new('L', image.shape[:2], 0)
+    ImageDraw.Draw(img).polygon(polygon, outline=1, fill=1)
+    mask = np.logical_not(np.array(img, dtype=bool))
+
     temp = image.copy()
-    image[:] = 255
+    temp[mask] = 255   
     
-    for point in polygon:
-      image[point] = temp[point]
-    
-    return image
+    return temp
     
   
   def save_image(self, name, image):
-    plt.imsave("samples/%s.png" % name, image)
+    plt.imsave("samples/%s.png" % name, image, cmap=plt.cm.gray)
 
   
   # Mercator Helper Methods
@@ -150,22 +157,25 @@ class PolygonDetector:
   
   # Image Search Methods
   def search(self, point):
-    self.search_terrain(point)
+    polygon = self.search_terrain(point)
+    self.search_satellite(point, polygon)
     
     
-  def search_terrain(self, point):
-    center_image = self.center_image("terrain", point, self.zoom, marker=point)
-    (center_polygon, center_bounds) = self.image_search(center_image, point, self.zoom)
+  def search_terrain(self, point):  
+    image = self.center_image("terrain", point, self.zoom, marker=point)
+    (polygon, bounds) = self.image_border_search(image, point, self.zoom)
+    return polygon
     
-    self.save_image("centered", center_image)
-    self.save_image("test", self.mask_image(center_image, center_polygon))
     
-    zoomed_bounds = self.pixel_bounds_to_point_bounds(point, center_bounds, self.zoom)
-    zoomed_image = self.bounds_image("terrain", zoomed_bounds, self.zoom + 1, marker=point)
-    (zoomed_polygon, zoomed_bounds) = self.image_search(zoomed_image, point, self.zoom + 1)
+  def search_satellite(self, point, polygon):
+    image = self.center_image("satellite", point, self.zoom)
+    masked_image = self.mask_image(image, polygon)
+    grayscale_image = self.grayscale(masked_image)
     
-    self.save_image("zoomed", zoomed_image)
-    self.save_image("test2", self.mask_image(zoomed_image, zoomed_polygon))
+    edge_image = filters.prewitt(grayscale_image)
+    
+    self.save_image("edge", edge_image)
+    
     
   
   def image_find_start(self, image):  
@@ -186,6 +196,7 @@ class PolygonDetector:
     frontier.put(start)
     polygon = []
     visited = []
+    bounds = [0, self.tile_size-1]
     
     while not frontier.empty():        
       point = frontier.get()
@@ -194,9 +205,9 @@ class PolygonDetector:
         x for x in neighbors if image[x] > self.grayscale_filter
       ]
       
-      if len(non_borders) == 0 or len(neighbors) == len(non_borders):
+      if len(non_borders) == 0 or (len(neighbors) == len(non_borders) and self.in_shape(bounds, point)):      
         continue
-        
+      
       polygon.append(point)
         
       for neighbor in neighbors:
@@ -207,7 +218,7 @@ class PolygonDetector:
     return polygon
 
 
-  def image_search(self, image, point, zoom):   
+  def image_border_search(self, image, point, zoom):   
     grayscale = self.grayscale(image)
     start = self.image_find_start(image)
     border_point = self.image_find_border(grayscale, start)
