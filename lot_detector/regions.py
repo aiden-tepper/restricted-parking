@@ -1,6 +1,4 @@
 import numpy as np
-import matplotlib.patches as mpatches
-
 from skimage.filters import threshold_otsu
 from skimage.segmentation import clear_border
 from skimage.measure import label
@@ -45,6 +43,6 @@ class PolygonRegions():
       if area < (total_area * 0.02) or area > (total_area * 0.7):
           continue 
           
-      regions.append((minr, minc, maxr, maxc))
+      regions.append([(minr, minc), (maxr, maxc)])
     
     return regions

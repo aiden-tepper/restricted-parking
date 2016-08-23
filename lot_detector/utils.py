@@ -5,6 +5,7 @@ import math
 from mercator import GlobalMercator
 from PIL import Image, ImageDraw
 from skimage import feature
+import matplotlib.patches as mpatches
 
 
 class PolygonUtils:
@@ -115,6 +116,18 @@ class PolygonUtils:
     temp[mask] = 255
     
     return temp
+    
+    
+  def draw_path_on_image(self, image, regions):
+    for region in regions:
+      minr, minc, maxr, maxc = (region[0][0], region[0][1], region[1][0], region[1][1])
+      rect = mpatches.Rectangle((minc, minr), maxc - minc, maxr - minr,
+                                fill=False, edgecolor='red', linewidth=2)
+      fig, ax = plt.subplots(ncols=1, nrows=1, figsize=(6, 6))
+      ax.imshow(image)
+      ax.add_patch(rect)
+    
+    plt.show()
     
   
   def save_image(self, name, image):

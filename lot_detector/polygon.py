@@ -13,6 +13,7 @@ class PolygonDetector:
   
   # Instance variables 
   zoom = 20
+  debug = True
   utils = PolygonUtils()
   regions = PolygonRegions()
   profiler = PolygonProfiler()
@@ -21,7 +22,9 @@ class PolygonDetector:
   # Instance Methods
   def search(self, point):
     terrain_polygon = self.search_terrain(point)
-    self.search_satellite(point, terrain_polygon)
+    lot_regions = self.search_satellite(point, terrain_polygon)
+    print(lot_regions)
+    
     
     
   def search_terrain(self, point):  
@@ -30,21 +33,27 @@ class PolygonDetector:
     return polygon
     
     
-  def search_satellite(self, point, polygon):
+  def search_satellite(self, point, polygon):    
     image = self.utils.center_image("satellite", point, self.zoom)
     masked_image = self.utils.mask_image(image, polygon)
     grayscale_image = self.utils.grayscale(masked_image)
+    lot_regions = []
     
     edge_image = filters.prewitt(grayscale_image)
     edge_regions = self.regions.search(edge_image)
     
     for region in edge_regions:
-      region_image = masked_image[region[0]:region[2], region[1]:region[3], :]
+      region_image = masked_image[region[0][0]:region[1][0], region[0][1]:region[1][1], :]
       profile = self.profiler.profile(region_image)
-      print(profile)
+      
+      if profile == PolygonProfile.LOT:
+        lot_regions.append(region)
+        
     
+    if self.debug and len(lot_regions) > 0:
+      self.utils.draw_path_on_image(image, lot_regions)
     
-    return None
+    return lot_regions
     
   
   def image_find_start(self, image):  

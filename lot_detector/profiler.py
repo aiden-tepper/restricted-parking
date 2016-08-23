@@ -10,7 +10,10 @@ class PolygonProfile(Enum):
 
 class PolygonProfiler:
   
-  # Instnce methods
+  # Instance Variables
+  debug = False
+  
+  # Instance methods
   def profile(self, image):
     flattened_image = image.reshape(-1, 3)
     masked_image = np.array([color for color in flattened_image if np.any(color != 255)])
@@ -25,7 +28,7 @@ class PolygonProfiler:
       "blue": np.histogram(blue, 25, range=(0,255))[0]
     })
     
-    if True or profile == PolygonProfile.LOT:
+    if self.debug and profile == PolygonProfile.LOT:
       self.plot_debug(image, [
         [red, "red"],
         [green, "green"],
@@ -33,8 +36,7 @@ class PolygonProfiler:
       ])
        
     return profile
-    
-    
+        
   
   def classify(self, histograms):
     if self.is_lot(histograms):
@@ -47,10 +49,9 @@ class PolygonProfiler:
     mostly_gray = []
     
     for color, histogram in histograms.items():
-      gray_sum = histogram[1:8].sum()
+      gray_sum = histogram[1:3].sum()
       total_sum = histogram.sum()
-      mostly_gray.append(gray_sum/total_sum > 0.75)
-      #print(color, gray_sum/total_sum)
+      mostly_gray.append(gray_sum/total_sum > 0.20)
      
     return np.array(mostly_gray).all()
     
