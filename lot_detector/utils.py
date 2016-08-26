@@ -6,11 +6,15 @@ from mercator import GlobalMercator
 from PIL import Image, ImageDraw
 from skimage import feature
 import matplotlib.patches as mpatches
+from matplotlib.path import Path
+from matplotlib.transforms import Bbox
+import matplotlib as mpl
 
 
 class PolygonUtils:
   
   # Instance Variables
+  debug = False
   tile_size = 500
   grayscale_filter = 100
   dot_color = "0x73FF2F"
@@ -19,7 +23,7 @@ class PolygonUtils:
   mercator = GlobalMercator(tileSize=tile_size)
   
     
-  # Helper Methods    
+  # Helper Methods
   def point_to_string(self, point):
     return "%s,%s" % point
     
@@ -43,7 +47,9 @@ class PolygonUtils:
         
       )
     
-    print(self.base_url + params)
+    if self.debug:
+      print(self.base_url + params)
+    
     return io.imread(self.base_url + params)
   
   
@@ -117,16 +123,21 @@ class PolygonUtils:
     
     return temp
     
+  
+  def region_to_bbox(self, region):
+    return Bbox(self.tile_size - np.array([
+      (region[0][0], region[0][1]),
+      (region[1][0], region[1][1])
+    ]))
     
-  def draw_path_on_image(self, image, regions):
-    for region in regions:
-      minr, minc, maxr, maxc = (region[0][0], region[0][1], region[1][0], region[1][1])
-      rect = mpatches.Rectangle((minc, minr), maxc - minc, maxr - minr,
-                                fill=False, edgecolor='red', linewidth=2)
+
+  def draw_path_on_image(self, image, paths):
+    for path in paths:
+      rect = mpatches.PathPatch(path, edgecolor="red", facecolor="none", lw=3)
       fig, ax = plt.subplots(ncols=1, nrows=1, figsize=(6, 6))
       ax.imshow(image)
       ax.add_patch(rect)
-    
+  
     plt.show()
     
   

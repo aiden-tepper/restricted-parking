@@ -3,6 +3,8 @@ from scipy import spatial
 from queue import Queue
 import math
 import skimage.filters as filters
+import matplotlib.pyplot as plt
+from matplotlib.path import Path
 
 from utils import PolygonUtils
 from regions import PolygonRegions
@@ -22,9 +24,15 @@ class PolygonDetector:
   # Instance Methods
   def search(self, point):
     terrain_polygon = self.search_terrain(point)
-    lot_regions = self.search_satellite(point, terrain_polygon)
-    print(lot_regions)
+    lot_paths = self.search_satellite(point, terrain_polygon)
     
+    for path in lot_paths:
+      polygon = path.to_polygons()[0]
+      bounds = [
+        (np.amin(polygon[0]), np.amax(polygon[1])),
+        (np.amax(polygon[0]), np.amin(polygon[1]))
+      ]
+      print(self.utils.pixel_bounds_to_point_bounds(point, bounds, self.zoom))
     
     
   def search_terrain(self, point):  
@@ -34,10 +42,11 @@ class PolygonDetector:
     
     
   def search_satellite(self, point, polygon):    
+    polygon_path = Path(polygon, closed=True)
     image = self.utils.center_image("satellite", point, self.zoom)
     masked_image = self.utils.mask_image(image, polygon)
     grayscale_image = self.utils.grayscale(masked_image)
-    lot_regions = []
+    lot_paths = []
     
     edge_image = filters.prewitt(grayscale_image)
     edge_regions = self.regions.search(edge_image)
@@ -47,13 +56,13 @@ class PolygonDetector:
       profile = self.profiler.profile(region_image)
       
       if profile == PolygonProfile.LOT:
-        lot_regions.append(region)
-        
+        bbox = self.utils.region_to_bbox(region)
+        lot_paths.append(polygon_path.clip_to_bbox(bbox, inside=True))
     
-    if self.debug and len(lot_regions) > 0:
-      self.utils.draw_path_on_image(image, lot_regions)
+    if self.debug and len(lot_paths) > 0:
+      self.utils.draw_path_on_image(image, lot_paths)
     
-    return lot_regions
+    return lot_paths
     
   
   def image_find_start(self, image):  
@@ -113,8 +122,18 @@ class PolygonDetector:
     
     
 if __name__ == "__main__":
-  starter_point = (34.0039417,-118.4858517)
+  points = [
+    (34.0039417, -118.4858517),
+#     (34.0027721, -118.4846514),
+#     (34.0009191, -118.4842381),
+#     (34.0003494, -118.4861325),
+#     (34.0014563, -118.483333),
+#     (34.0022385, -118.4883279),
+#     (34.0036698, -118.4847942),
+#     (33.9993226, -118.4811244),
+  ]
   
-  detector = PolygonDetector()
-  detector.search(starter_point)
+  for point in points:  
+    detector = PolygonDetector()
+    detector.search(point)
   
