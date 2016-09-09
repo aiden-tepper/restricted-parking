@@ -32,6 +32,8 @@ class PolygonDetector:
         (np.amin(polygon[0]), np.amax(polygon[1])),
         (np.amax(polygon[0]), np.amin(polygon[1]))
       ]
+      
+      # TODO: lat/lng generated are shifted/off
       print(self.utils.pixel_bounds_to_point_bounds(point, bounds, self.zoom))
     
     

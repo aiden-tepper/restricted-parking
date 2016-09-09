@@ -158,7 +158,9 @@ class PolygonUtils:
   
   def pixels_to_bounds(self, pixels, zoom):
     tile = self.mercator.PixelsToTile(pixels[0], pixels[1])
+    google_tile = self.mercator.GoogleTile(tile[0], tile[1], zoom)
     bounds = self.mercator.TileLatLonBounds(tile[0], tile[1], zoom)
+    
     return [
       self.point_to_pixels((bounds[0], bounds[1]), zoom),
       self.point_to_pixels((bounds[2], bounds[3]), zoom)
@@ -169,6 +171,15 @@ class PolygonUtils:
     pixels = self.point_to_pixels(center, zoom)
     pixel_bounds = self.pixels_to_bounds(pixels, zoom)
     pixels_corner = (pixel_bounds[0][0], pixel_bounds[1][1])
+    
+#     print([
+#       self.pixels_to_point(pixel_bounds[0], zoom),
+#       self.pixels_to_point(pixel_bounds[1], zoom),
+#       self.pixels_to_point(pixels_corner, zoom)
+#     ]) 
+#     
+#     print("\n\n")
+    
     return [
       self.pixels_to_point((pixels_corner[0] + bounds[0][0], pixels_corner[1] - bounds[0][1]), zoom),
       self.pixels_to_point((pixels_corner[0] + bounds[1][0], pixels_corner[1] - bounds[1][1]), zoom)

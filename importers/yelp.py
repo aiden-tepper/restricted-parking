@@ -14,7 +14,7 @@ class Yelp(Base):
   
   def request(self, parameters):
     if self.debug:
-      f = open('samples/yelp.html', 'r')
+      f = open('importers/samples/yelp.html', 'r')
       return BeautifulSoup(f.read(), 'html.parser')
 
     r = requests.get(self.base_url, params=parameters)

@@ -12,7 +12,7 @@ class Foursquare(Base):
   
   def request(self, params):
     if self.debug:
-      data_file = open('samples/foursquare.json')  
+      data_file = open('importers/samples/foursquare.json')  
       return json.load(data_file)
     
     return self.client.venues.explore(params=params)

@@ -29,7 +29,7 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
-###############################################################################
+###############################################################################
 
 """
 globalmaptiles.py
@@ -227,8 +227,8 @@ class GlobalMercator(object):
     def TileBounds(self, tx, ty, zoom):
         "Returns bounds of the given tile in EPSG:900913 coordinates"
         
-        minx, miny = self.PixelsToMeters( tx*self.tileSize, ty*self.tileSize, zoom )
-        maxx, maxy = self.PixelsToMeters( (tx+1)*self.tileSize, (ty+1)*self.tileSize, zoom )
+        minx, miny = self.PixelsToMeters( (tx+0.25)*self.tileSize, (ty+0.25)*self.tileSize, zoom )
+        maxx, maxy = self.PixelsToMeters( (tx+1.5)*self.tileSize, (ty+1.5)*self.tileSize, zoom )
         return ( minx, miny, maxx, maxy )
 
     def TileLatLonBounds(self, tx, ty, zoom ):

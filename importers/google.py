@@ -7,7 +7,7 @@ class Google(Base):
   
   def request(self, params):
     if self.debug:
-      data_file = open('samples/google.json')  
+      data_file = open('importers/samples/google.json')  
       return json.load(data_file)
     
     return self.gmaps.places(

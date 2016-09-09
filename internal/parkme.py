@@ -17,8 +17,8 @@ class ParkMe:
       "restrictive": True
     })
     
-    if "Created" in response.text:
-      print("PARKME UPLOAD:", venue.name, "---", venue.address)
+    #if "Created" in response.text:
+    print("PARKME UPLOAD:", venue.name, "---", venue.address)
     
     
   def get_destination(self, venue):
