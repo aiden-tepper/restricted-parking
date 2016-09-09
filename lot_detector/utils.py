@@ -109,7 +109,7 @@ class PolygonUtils:
     ]
     
   
-  def mask_image(self, image, polygon):  
+  def mask_image(self, image, polygon, color=255):  
     # Flip coordinates for the mask
     for i, point in enumerate(polygon):
       polygon[i] = (point[1], point[0])
@@ -119,7 +119,7 @@ class PolygonUtils:
     mask = np.logical_not(np.array(img, dtype=bool))
 
     temp = image.copy()
-    temp[mask] = 255
+    temp[mask] = color
     
     return temp
     
