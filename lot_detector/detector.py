@@ -25,16 +25,20 @@ class PolygonDetector:
   def search(self, point):
     terrain_polygon = self.search_terrain(point)
     lot_paths = self.search_satellite(point, terrain_polygon)
+    polygons = []
     
     for path in lot_paths:
       polygon = path.to_polygons()[0]
       bounds = [
+        (np.amax(polygon[0]), np.amax(polygon[1])),
+        (np.amin(polygon[0]), np.amin(polygon[1])),
         (np.amin(polygon[0]), np.amax(polygon[1])),
         (np.amax(polygon[0]), np.amin(polygon[1]))
       ]
       
-      # TODO: lat/lng generated are shifted/off
-      print(self.utils.pixel_bounds_to_point_bounds(point, bounds, self.zoom))
+      polygons.append(self.utils.pixel_polygon_to_point_bounds(point, bounds, self.zoom))
+      
+    return polygons
     
     
   def search_terrain(self, point):  
@@ -137,5 +141,5 @@ if __name__ == "__main__":
   
   for point in points:  
     detector = PolygonDetector()
-    detector.search(point)
+    print(detector.search(point))
   

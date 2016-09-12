@@ -167,21 +167,14 @@ class PolygonUtils:
     ]
     
   
-  def pixel_bounds_to_point_bounds(self, center, bounds, zoom):
+  def pixel_polygon_to_point_bounds(self, center, polygon, zoom):
     pixels = self.point_to_pixels(center, zoom)
     pixel_bounds = self.pixels_to_bounds(pixels, zoom)
     pixels_corner = (pixel_bounds[0][0], pixel_bounds[1][1])
+    points = []
     
-#     print([
-#       self.pixels_to_point(pixel_bounds[0], zoom),
-#       self.pixels_to_point(pixel_bounds[1], zoom),
-#       self.pixels_to_point(pixels_corner, zoom)
-#     ]) 
-#     
-#     print("\n\n")
+    for point in polygon:
+      points.append(self.pixels_to_point((pixels_corner[0] + point[0], pixels_corner[1] - point[1]), zoom))
     
-    return [
-      self.pixels_to_point((pixels_corner[0] + bounds[0][0], pixels_corner[1] - bounds[0][1]), zoom),
-      self.pixels_to_point((pixels_corner[0] + bounds[1][0], pixels_corner[1] - bounds[1][1]), zoom)
-    ]
+    return points
   
